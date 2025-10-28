@@ -1,0 +1,27 @@
+server:
+  port: ${SERVER_PORT:8082}
+
+spring:
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:h2:mem:inventory;DB_CLOSE_DELAY=-1}
+    username: ${SPRING_DATASOURCE_USERNAME:sa}
+    password: ${SPRING_DATASOURCE_PASSWORD:}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+api:
+  key: ${INTERSERVICE_API_KEY:change-me}
+
+products:
+  base-url: ${PRODUCTS_BASE_URL:http://localhost:8081}
+
+HTTP_CLIENT_TIMEOUT_MS: ${HTTP_CLIENT_TIMEOUT_MS:1500}
+HTTP_CLIENT_MAX_RETRIES: ${HTTP_CLIENT_MAX_RETRIES:2}
