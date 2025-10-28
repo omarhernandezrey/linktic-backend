@@ -18,14 +18,14 @@ public class InventoryController {
     public InventoryController(InventoryRepository repo, PurchaseService purchaseService){ this.repo = repo; this.purchaseService = purchaseService; }
 
     @GetMapping("inventory/{productId}")
-    public ResponseEntity<?> getQty(@PathVariable Long productId){
+    public ResponseEntity<?> getQty(@PathVariable("productId") Long productId){
         var inv = repo.findByProductId(productId).orElse(null);
         long qty = inv==null?0L:inv.getQuantity();
         return ResponseEntity.ok(JsonApi.resource("inventory", String.valueOf(productId), Map.of("quantity", qty)));
     }
 
     @PatchMapping(value="inventory/{productId}", consumes = "application/vnd.api+json")
-    public ResponseEntity<?> setQty(@PathVariable Long productId, @RequestBody Map<String,Object> body){
+    public ResponseEntity<?> setQty(@PathVariable("productId") Long productId, @RequestBody Map<String,Object> body){
         Map<String,Object> data = (Map<String,Object>) body.get("data");
         Map<String,Object> attrs = (Map<String,Object>) data.get("attributes");
         long newQty = Long.parseLong(String.valueOf(attrs.get("quantity")));

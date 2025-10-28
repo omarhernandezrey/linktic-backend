@@ -37,7 +37,7 @@ public class ProductController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<?> get(@PathVariable Long id){
+    public ResponseEntity<?> get(@PathVariable("id") Long id){
         return repo.findById(id)
                 .<ResponseEntity<?>>map(p -> ResponseEntity.ok(JsonApi.resource("products", String.valueOf(p.getId()), Map.of(
                         "name", p.getName(), "price", p.getPrice(), "description", p.getDescription()
