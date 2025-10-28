@@ -11,8 +11,10 @@
     <description>Proyecto backend monorepo para Linktic</description>
 
     <properties>
-        <java.version>17</java.version>
-        <spring-boot.version>3.2.5</spring-boot.version>
+        <!-- Ajustado para la JVM instalada localmente (Java 21) para evitar errores de compilación
+             Si necesitas mantener compatibilidad con Java 17 en CI/producción, cambia la JDK allí. -->
+        <java.version>21</java.version>
+        <spring-boot.version>3.4.1</spring-boot.version>
     </properties>
 
     <modules>
@@ -39,6 +41,17 @@
                     <groupId>org.springframework.boot</groupId>
                     <artifactId>spring-boot-maven-plugin</artifactId>
                     <version>${spring-boot.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>3.11.0</version>
+                    <configuration>
+                    <!-- Usar source/target en lugar de release para evitar problemas con algunas implementaciones.
+                        Si deseas forzar un comportamiento más estricto usa <release> en entornos compatibles. -->
+                        <source>${java.version}</source>
+                        <target>${java.version}</target>
+                    </configuration>
                 </plugin>
             </plugins>
         </pluginManagement>

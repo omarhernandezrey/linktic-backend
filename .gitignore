@@ -1,6 +1,13 @@
 target/
 **/target/
+.m2/
+/.m2/
 .idea/
 *.iml
 *.log
 .env
+
+# Archives and build artifacts
+*.zip
+*.tar.gz
+*.jar
