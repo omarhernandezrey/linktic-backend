@@ -20,7 +20,7 @@ public class ProductsClient {
 
     public ProductsClient(@Value("${products.base-url}") String baseUrl,
                           @Value("${api.key}") String apiKey,
-                          @Value("${HTTP_CLIENT_TIMEOUT_MS:1500}") long timeoutMs) {
+                          @Value("${http.client.timeout-ms:1500}") long timeoutMs) {
         this.webClient = WebClient.builder()
                 .baseUrl(baseUrl)
                 .defaultHeader(HttpHeaders.CONTENT_TYPE, "application/vnd.api+json")

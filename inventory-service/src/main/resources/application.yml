@@ -23,8 +23,10 @@ api:
 products:
   base-url: ${PRODUCTS_BASE_URL:http://localhost:8081}
 
-HTTP_CLIENT_TIMEOUT_MS: 1500
-HTTP_CLIENT_MAX_RETRIES: 2
+http:
+  client:
+    timeout-ms: 1500
+    max-retries: 2
 
 resilience4j:
   circuitbreaker:

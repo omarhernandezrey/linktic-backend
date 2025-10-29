@@ -7,7 +7,6 @@ import com.linktic.inventory.repo.InventoryRepository;
 import com.linktic.inventory.repo.PurchaseRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import reactor.core.publisher.Mono;
 
 import java.math.BigDecimal;
 import java.util.Map;
@@ -23,12 +22,13 @@ public class PurchaseService {
     }
 
     @Transactional
+    @SuppressWarnings("unchecked")
     public Purchase purchase(Long productId, long qty){
         if (qty <= 0) throw new IllegalArgumentException("INVALID_QUANTITY");
 
-        Map data = productsClient.getProduct(productId).block();
-        Map dataObj = (Map) data.get("data");
-        Map attrs = (Map) dataObj.get("attributes");
+        Map<String,Object> data = productsClient.getProduct(productId).block();
+        Map<String,Object> dataObj = (Map<String,Object>) data.get("data");
+        Map<String,Object> attrs = (Map<String,Object>) dataObj.get("attributes");
         BigDecimal unitPrice = new BigDecimal(String.valueOf(attrs.get("price")));
 
         Inventory inv = inventoryRepository.findByProductId(productId).orElseGet(() -> { Inventory i = new Inventory(); i.setProductId(productId); i.setQuantity(0L); return i; });
