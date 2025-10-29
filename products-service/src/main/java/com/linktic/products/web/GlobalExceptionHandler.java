@@ -4,6 +4,7 @@ import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
+import org.springframework.web.HttpMediaTypeNotAcceptableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -37,6 +38,13 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
                 .contentType(org.springframework.http.MediaType.valueOf("application/vnd.api+json"))
                 .body(JsonApi.error(415, "Unsupported Media Type", ex.getMessage()));
+    }
+
+    @ExceptionHandler(HttpMediaTypeNotAcceptableException.class)
+    public ResponseEntity<?> handleNotAcceptable(HttpMediaTypeNotAcceptableException ex){
+        return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE)
+                .contentType(org.springframework.http.MediaType.valueOf("application/vnd.api+json"))
+                .body(JsonApi.error(406, "Not Acceptable", ex.getMessage()));
     }
 
     @ExceptionHandler(Exception.class)

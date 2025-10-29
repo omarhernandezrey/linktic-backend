@@ -85,4 +85,20 @@ class JsonApiStrictnessTest {
                 .andExpect(content().contentType(VND))
                 .andExpect(jsonPath("$.errors[0].status").value("400"));
     }
+
+    @Test
+    @DisplayName("POST /products con Accept no soportado debe responder 406 JSON:API")
+    void unacceptableAcceptHeader_returns406() throws Exception {
+        String body = """
+          {"data":{"type":"products","attributes":{"name":"Mouse","price":49.9}}}
+        """;
+        mvc.perform(post("/products")
+                .contentType(VND)
+                .accept(MediaType.APPLICATION_XML)
+                .header("X-API-KEY", "my-secret")
+                .content(body))
+                .andExpect(status().isNotAcceptable())
+                .andExpect(content().contentType(VND))
+                .andExpect(jsonPath("$.errors[0].status").value("406"));
+    }
 }

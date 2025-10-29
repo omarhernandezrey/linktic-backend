@@ -104,6 +104,7 @@ Autenticación: enviar `X-API-KEY: <valor>` en cada request.
 - Respuestas de validación: formato JSON:API (`application/vnd.api+json`) con `errors[*].source.pointer` apuntando al campo (por ejemplo, `/data/attributes/price`).
 - Estricta conformidad JSON:API en creación (`POST /products`):
   - `Content-Type` debe ser `application/vnd.api+json` (si no, 415 Unsupported Media Type).
+  - El header `Accept` debe incluir `application/vnd.api+json` (si no, 406 Not Acceptable).
   - `data.type` debe ser exactamente `"products"` (si no, 409 Conflict).
   - No se debe enviar `data.id` en creación (si está presente, 400 Bad Request).
 
