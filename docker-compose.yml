@@ -3,8 +3,8 @@ services:
     image: postgres:16
     environment:
       POSTGRES_DB: "${PRODUCTS_DB_NAME:-products}"
-      POSTGRES_USER: "${PRODUCTS_DB_USER}"
-      POSTGRES_PASSWORD: "${PRODUCTS_DB_PASS}"
+      POSTGRES_USER: "${PRODUCTS_DB_USER:-products}"
+      POSTGRES_PASSWORD: "${PRODUCTS_DB_PASS:-products}"
     ports:
       - "${PRODUCTS_DB_PORT:-5433}:5432"
     healthcheck:
@@ -17,8 +17,8 @@ services:
     image: postgres:16
     environment:
       POSTGRES_DB: "${INVENTORY_DB_NAME:-inventory}"
-      POSTGRES_USER: "${INVENTORY_DB_USER}"
-      POSTGRES_PASSWORD: "${INVENTORY_DB_PASS}"
+      POSTGRES_USER: "${INVENTORY_DB_USER:-inventory}"
+      POSTGRES_PASSWORD: "${INVENTORY_DB_PASS:-inventory}"
     ports:
       - "${INVENTORY_DB_PORT:-5434}:5432"
     healthcheck:
@@ -33,10 +33,10 @@ services:
       dockerfile: products-service/Dockerfile
     environment:
       SPRING_PROFILES_ACTIVE: docker
-      INTERSERVICE_API_KEY: "${INTERSERVICE_API_KEY}"
+      INTERSERVICE_API_KEY: "${INTERSERVICE_API_KEY:-local-secret}"
       SPRING_DATASOURCE_URL: "${PRODUCTS_DB_URL:-jdbc:postgresql://postgres-products:5432/${PRODUCTS_DB_NAME:-products}}"
-      SPRING_DATASOURCE_USERNAME: "${PRODUCTS_DB_USER}"
-      SPRING_DATASOURCE_PASSWORD: "${PRODUCTS_DB_PASS}"
+      SPRING_DATASOURCE_USERNAME: "${PRODUCTS_DB_USER:-products}"
+      SPRING_DATASOURCE_PASSWORD: "${PRODUCTS_DB_PASS:-products}"
       SERVER_PORT: "${PRODUCTS_PORT:-8081}"
       SPRING_JPA_HIBERNATE_DDL_AUTO: "update"
     depends_on:
@@ -56,10 +56,10 @@ services:
       dockerfile: inventory-service/Dockerfile
     environment:
       SPRING_PROFILES_ACTIVE: docker
-      INTERSERVICE_API_KEY: "${INTERSERVICE_API_KEY}"
+      INTERSERVICE_API_KEY: "${INTERSERVICE_API_KEY:-local-secret}"
       SPRING_DATASOURCE_URL: "${INVENTORY_DB_URL:-jdbc:postgresql://postgres-inventory:5432/${INVENTORY_DB_NAME:-inventory}}"
-      SPRING_DATASOURCE_USERNAME: "${INVENTORY_DB_USER}"
-      SPRING_DATASOURCE_PASSWORD: "${INVENTORY_DB_PASS}"
+      SPRING_DATASOURCE_USERNAME: "${INVENTORY_DB_USER:-inventory}"
+      SPRING_DATASOURCE_PASSWORD: "${INVENTORY_DB_PASS:-inventory}"
       PRODUCTS_BASE_URL: "http://products-service:${PRODUCTS_PORT:-8081}"
       SERVER_PORT: "${INVENTORY_PORT:-8082}"
       HTTP_CLIENT_TIMEOUT_MS: "${HTTP_CLIENT_TIMEOUT_MS:-1500}"

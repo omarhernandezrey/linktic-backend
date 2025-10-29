@@ -212,6 +212,14 @@ URLs con Compose:
 
 Compose define healthchecks y dependencias; los servicios arrancan cuando sus DBs están healthy.
 
+Sugerencia: si es tu primer arranque, copia el archivo de variables de entorno de ejemplo y ajústalo si lo necesitas:
+
+```bash
+cp .env.example .env
+```
+
+El archivo `docker-compose.yml` trae valores por defecto sensatos, por lo que también funcionará aunque no crees `.env` (se usarán los defaults del compose).
+
 ## Pruebas y cobertura
 
 Ejecutar todo el monorepo:
