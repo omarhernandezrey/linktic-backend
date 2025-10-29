@@ -25,3 +25,31 @@ products:
 
 HTTP_CLIENT_TIMEOUT_MS: 1500
 HTTP_CLIENT_MAX_RETRIES: 2
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      productsService:
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 10
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+        permittedNumberOfCallsInHalfOpenState: 3
+        recordExceptions:
+          - java.io.IOException
+          - java.net.SocketTimeoutException
+          - org.springframework.web.reactive.function.client.WebClientRequestException
+          - org.springframework.web.reactive.function.client.WebClientResponseException
+        ignoreExceptions:
+          - com.linktic.inventory.client.ProductNotFoundException
+  retry:
+    instances:
+      productsService:
+        maxAttempts: ${HTTP_CLIENT_MAX_RETRIES:2}
+        waitDuration: 200ms
+        retryExceptions:
+          - java.io.IOException
+          - java.net.SocketTimeoutException
+          - org.springframework.web.reactive.function.client.WebClientRequestException
+        ignoreExceptions:
+          - com.linktic.inventory.client.ProductNotFoundException

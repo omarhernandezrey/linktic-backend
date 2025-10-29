@@ -11,8 +11,14 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<?> handleValidation(MethodArgumentNotValidException ex){
-        String msg = ex.getBindingResult().getAllErrors().stream().findFirst().map(e-> e.getDefaultMessage()).orElse("Validation error");
-        return ResponseEntity.badRequest().body(JsonApi.error(400, "Bad Request", msg));
+        var errors = ex.getBindingResult().getFieldErrors().stream()
+                .map(fe -> Map.of(
+                        "status", "400",
+                        "title", "Bad Request",
+                        "detail", fe.getDefaultMessage(),
+                        "source", Map.of("pointer", toJsonApiPointer(fe.getField()))
+                )).toList();
+        return ResponseEntity.badRequest().body(Map.of("errors", errors));
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
@@ -23,5 +29,10 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<?> handleGeneric(Exception ex){
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(JsonApi.error(500, "Internal Server Error", ex.getMessage()));
+    }
+
+    private String toJsonApiPointer(String field){
+        // field like "data.attributes.name" -> "/data/attributes/name"
+        return "/" + field.replace('.', '/');
     }
 }

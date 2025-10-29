@@ -25,7 +25,7 @@ class InventoryControllerTest {
         String body = """
         {"data":{"type":"inventory","attributes":{"quantity":5}}}
         """;
-        mvc.perform(patch("/inventory/1").header("X-API-KEY","test")
+    mvc.perform(patch("/inventory/1").header("X-API-KEY","change-me")
                 .contentType("application/vnd.api+json")
                 .content(body))
                 .andExpect(status().isOk())
