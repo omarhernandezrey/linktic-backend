@@ -95,6 +95,18 @@ Endpoints principales:
 
 Autenticación: enviar `X-API-KEY: <valor>` en cada request.
 
+### Validaciones de DTOs (Products)
+
+- Campos y reglas principales (mensajes en español):
+  - name: obligatorio, entre 2 y 80 caracteres.
+  - price: obligatorio, rango [0, 1,000,000], precisión de hasta 7 dígitos enteros y 2 decimales (`@Digits(integer=7, fraction=2)`).
+  - description: máximo 200 caracteres.
+- Respuestas de validación: formato JSON:API (`application/vnd.api+json`) con `errors[*].source.pointer` apuntando al campo (por ejemplo, `/data/attributes/price`).
+- Estricta conformidad JSON:API en creación (`POST /products`):
+  - `Content-Type` debe ser `application/vnd.api+json` (si no, 415 Unsupported Media Type).
+  - `data.type` debe ser exactamente `"products"` (si no, 409 Conflict).
+  - No se debe enviar `data.id` en creación (si está presente, 400 Bad Request).
+
 ## Resiliencia y timeouts
 - WebClient con timeout `HTTP_CLIENT_TIMEOUT_MS` (ms).
 - Retry exponencial y circuit breaker de Resilience4j para `productsClient` (inventario):
