@@ -1,67 +1,28 @@
-# Proyecto: Microservicios de Productos e Inventario
+# Microservicios: Products e Inventory
 
-## Objetivo
-Desarrollar dos microservicios independientes que interactúen entre sí: Productos e Inventario.
+Solución completa con dos microservicios independientes (Spring Boot 3, Java 21) que exponen APIs JSON:API, persisten en PostgreSQL, se comunican entre sí y se despliegan con Docker Compose. Incluye resiliencia (timeouts, reintentos y circuit breaker), autenticación por API key, Actuator/healthchecks, pruebas unitarias e integración, cobertura y documentación con OpenAPI.
 
-### Funcionalidades principales
-- Crear productos.
-- Realizar compras que descuenten del inventario.
-- Implementar JSON API para todas las respuestas.
-- Usar Docker para containerizar los servicios.
-- Base de datos: PostgreSQL.
+## Requisitos previos
+- Java 21 y Maven 3.9+
+- Docker y Docker Compose
+- cURL o Postman para probar
 
-## Microservicio 1: Productos
-### Modelo
-- `Product` con los campos:
-  - `id`
-  - `nombre`
-  - `precio`
-  - `descripción` (opcional)
+## Estructura del repositorio
+- `products-service/`: CRUD de productos y consulta de precios
+- `inventory-service/`: stock e ingestión de compras; invoca a `products-service`
+- `docker-compose.yml`: orquestación de los 2 servicios y 2 PostgreSQL
+- `.env`: variables de entorno para Compose (puertos, credenciales, API key)
+- `AGENTS.md`: guía de trabajo asistido
 
-### Endpoints
-- **POST /products**: Crear un nuevo producto.
-- **GET /products/{id}**: Obtener un producto por ID.
-- **GET /products**: Listar todos los productos.
+## Decisiones técnicas (resumen)
+- Base de datos: PostgreSQL en runtime por robustez y tipado; H2 en pruebas por velocidad y aislamiento. JPA/Hibernate con DDL auto `update` en Docker y `create-drop` en tests.
+- Contrato JSON:API: respuestas con media type `application/vnd.api+json`, objetos `data`/`errors` consistentes.
+- Comunicación entre servicios: HTTP (Spring Web/WebClient). `inventory-service` llama a `products-service` para validar producto/precio.
+- Resiliencia: WebClient con timeout; Resilience4j (retry exponencial + circuit breaker) configurado en `inventory-service` para el cliente `productsClient`.
+- Seguridad: API key en header `X-API-KEY`. Filtro sencillo en ambos servicios.
+- Observabilidad: Actuator health con probes; healthchecks en Compose.
 
-## Microservicio 2: Inventario
-### Modelo
-- `Inventory` con los campos:
-  - `producto_id`
-  - `cantidad`
-
-### Endpoints
-- **GET /inventory/{productId}**: Consultar cantidad disponible.
-- **PATCH /inventory/{productId}**: Actualizar cantidad disponible.
-- **POST /purchases**: Registrar compras.
-
-### Flujo de Compra
-- **POST /purchases**:
-  - Recibir el ID del producto y la cantidad a comprar.
-  - Verificar disponibilidad en inventario.
-  - Actualizar cantidad tras una compra exitosa.
-  - Retornar información de la compra realizada.
-
-## Comunicación entre Microservicios
-- HTTP usando JSON API.
-- Autenticación básica mediante API keys.
-- Manejo de timeout y reintentos básicos.
-
-## Pruebas
-### Pruebas unitarias
-- Creación de productos.
-- Gestión de inventario.
-- Proceso de compra.
-- Manejo de errores (producto inexistente, inventario insuficiente).
-
-### Pruebas de integración
-- Comunicación entre microservicios.
-- Flujo completo de compra.
-
-## Documentación
-- Swagger/OpenAPI disponible en tiempo de ejecución:
-  - Products: http://localhost:8081/swagger-ui.html
-  - Inventory: http://localhost:8086/swagger-ui.html
-- Diagrama de arquitectura (Mermaid):
+## Arquitectura
 
 ```mermaid
 flowchart LR
@@ -70,12 +31,12 @@ flowchart LR
   end
   subgraph Products
     PAPI[Products Service]
+    DB1[(PostgreSQL Products)]
   end
   subgraph Inventory
     IAPI[Inventory Service]
+    DB2[(PostgreSQL Inventory)]
   end
-  DB1[(PostgreSQL Products)]
-  DB2[(PostgreSQL Inventory)]
 
   A -->|X-API-KEY| PAPI
   A -->|X-API-KEY| IAPI
@@ -84,54 +45,102 @@ flowchart LR
   IAPI --> DB2
 ```
 
-- Explicar decisiones técnicas y justificaciones.
-- Documentar el uso de herramientas de IA en el desarrollo.
+### Flujo de compra (secuencia)
 
-## Git Flow
-- Seguir buenas prácticas de Git Flow:
-  - Ramas: `develop`, `feature/*`, `release/*`, `hotfix/*`.
-  - Realizar commits claros y descriptivos.
+```mermaid
+sequenceDiagram
+  participant C as Client
+  participant I as inventory-service
+  participant P as products-service
+  C->>I: POST /purchases {productId, qty}
+  I->>P: GET /products/{id}
+  P-->>I: 200 {data: product}
+  I->>I: valida stock y descuenta
+  I-->>C: 201 {data: purchase}
+```
 
-## Entregables
-1. **Código fuente**:
-   - Microservicios independientes con Docker Compose.
-   - Pruebas unitarias e integración con cobertura ≥ 80%.
-   - Sistema de logs estructurados.
+## API y JSON:API
 
-2. **Documentación**:
-   - `README.md` con instrucciones de instalación y ejecución.
-   - Diagrama de arquitectura e interacción.
-   - Justificación de decisiones técnicas.
-   - Documentación de API con Swagger/OpenAPI.
+Media type: `application/vnd.api+json`.
 
-3. **Repositorio público**:
-   - Código organizado y siguiendo buenas prácticas.
-   - Ejemplo de uso de herramientas de IA en el desarrollo.
+Ejemplo éxito (Products: GET /products/1):
 
-## Próximos pasos
-1. Configurar la estructura inicial del proyecto. (LISTO)
-2. Implementar los modelos y endpoints básicos. (EN PROGRESO)
-3. Configurar Docker y la base de datos. (PENDIENTE)
-4. Desarrollar pruebas unitarias e integración. (PENDIENTE)
-5. Documentar y preparar la entrega. (EN PROGRESO)
+```json
+{
+  "data": {
+    "type": "products",
+    "id": "1",
+    "attributes": {
+      "name": "Mouse",
+      "price": 49.9,
+      "description": "Inalámbrico"
+    }
+  }
+}
+```
 
-## Variables de entorno y propiedades
+Ejemplo error (JSON:API errors):
 
-Productos (`products-service/src/main/resources/application.properties`):
-- `SERVER_PORT` (por defecto 8081)
-- `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME`, `SPRING_DATASOURCE_PASSWORD`
-- `INTERSERVICE_API_KEY` (por defecto `change-me`)
+```json
+{
+  "errors": [
+    { "status": 404, "title": "Producto no encontrado", "detail": "No existe el id 999" }
+  ]
+}
+```
 
-Inventario (`inventory-service/src/main/resources/application.properties`):
-- `server.port` (por defecto 8086)
-- `products.base-url` (por defecto `http://localhost:8081`)
-- `api.key` (por defecto `change-me`)
-- `HTTP_CLIENT_TIMEOUT_MS` (por defecto `1500`)
-- credenciales de PostgreSQL (local por defecto)
+Endpoints principales:
+- Products: `POST /products`, `GET /products/{id}`, `GET /products`
+- Inventory: `GET /inventory/{productId}`, `PATCH /inventory/{productId}`, `POST /purchases`
 
-## Cómo ejecutar
+Autenticación: enviar `X-API-KEY: <valor>` en cada request.
 
-En terminales separadas o usando perfiles/puertos distintos:
+## Resiliencia y timeouts
+- WebClient con timeout `HTTP_CLIENT_TIMEOUT_MS` (ms).
+- Retry exponencial y circuit breaker de Resilience4j para `productsClient` (inventario):
+  - retry: `resilience4j.retry.instances.productsClient.*`
+  - circuit breaker: `resilience4j.circuitbreaker.instances.productsClient.*`
+
+## Actuator y healthchecks
+- Actuator expone `/actuator/health` con probes.
+- Docker Compose espera a que DBs y servicios estén UP antes de encadenar dependencias.
+
+## Variables de entorno (.env)
+Archivo `.env` en la raíz (usado por Compose):
+
+```properties
+PRODUCTS_DB_NAME=products
+PRODUCTS_DB_USER=products
+PRODUCTS_DB_PASS=products
+PRODUCTS_DB_PORT=5433
+
+INVENTORY_DB_NAME=inventory
+INVENTORY_DB_USER=inventory
+INVENTORY_DB_PASS=inventory
+INVENTORY_DB_PORT=5434
+
+PRODUCTS_PORT=8081
+INVENTORY_PORT=8082
+
+INTERSERVICE_API_KEY=local-secret
+HTTP_CLIENT_TIMEOUT_MS=1500
+HTTP_CLIENT_MAX_RETRIES=2
+```
+
+Propiedades relevantes en runtime:
+- Products (`products-service/src/main/resources/application.properties`):
+  - `SERVER_PORT` (default 8081)
+  - `SPRING_DATASOURCE_URL/USERNAME/PASSWORD`
+  - `INTERSERVICE_API_KEY`
+- Inventory (`inventory-service/src/main/resources/application.properties`):
+  - `SERVER_PORT` (default 8086; Compose lo fija a 8082)
+  - `PRODUCTS_BASE_URL`
+  - `INTERSERVICE_API_KEY`
+  - `HTTP_CLIENT_TIMEOUT_MS`, `HTTP_CLIENT_MAX_RETRIES`
+
+## Cómo ejecutar (local)
+
+En terminales separadas:
 
 ```bash
 # Products service
@@ -143,7 +152,69 @@ cd ../inventory-service
 ./mvnw spring-boot:run
 ```
 
-Accesos rápidos:
+URLs locales (por defecto):
 - Products Swagger: http://localhost:8081/swagger-ui.html
 - Inventory Swagger: http://localhost:8086/swagger-ui.html
-- Recuerda enviar el header `X-API-KEY: <valor de INTERSERVICE_API_KEY>`
+
+Recuerda enviar el header `X-API-KEY: <valor de INTERSERVICE_API_KEY>`.
+
+## Cómo ejecutar con Docker Compose
+
+```bash
+docker compose up --build -d
+```
+
+URLs con Compose:
+- Products: http://localhost:8081
+- Inventory: http://localhost:8082
+
+Compose define healthchecks y dependencias; los servicios arrancan cuando sus DBs están healthy.
+
+## Pruebas y cobertura
+
+Ejecutar todo el monorepo:
+
+```bash
+mvn clean verify
+```
+
+Ejecución por módulo:
+
+```bash
+mvn -pl products-service test
+mvn -pl inventory-service test
+```
+
+Reporte JaCoCo:
+- `products-service/target/site/jacoco/index.html`
+- `inventory-service/target/site/jacoco/index.html`
+
+## Documentación OpenAPI
+- Products: `/swagger-ui.html`
+- Inventory: `/swagger-ui.html`
+
+## Seguridad (API Key)
+- Header requerido: `X-API-KEY`
+- Valor provisto por `INTERSERVICE_API_KEY` (configurable en `.env` o propiedades)
+
+## Git Flow y convenciones
+- Ramas: `main`, `develop`, `feature/*`, `release/*`, `hotfix/*`
+- Commits descriptivos; opcional Convencional Commits (feat, fix, docs, test, chore)
+- PRs con descripción y checklist de pruebas
+
+## Uso de IA en el desarrollo
+Se utilizó asistencia de IA para:
+- Generar esqueletos de controladores/servicios y DTOs JSON:API
+- Configurar Resilience4j y Docker Compose
+- Redactar pruebas y documentación
+
+Todas las salidas se validaron con compilación, pruebas automatizadas y ejecución local/Compose.
+
+## Troubleshooting
+- Healthcheck falla en Inventory en Compose: verifique que `SERVER_PORT` se propague (ya soportado en `inventory-service`).
+- Errores de conexión DB: confirme credenciales en `.env` y puertos libres.
+- 401 Unauthorized: añada `X-API-KEY` correcto.
+
+---
+
+Autor: Equipo Linktic — Microservicios Products & Inventory
