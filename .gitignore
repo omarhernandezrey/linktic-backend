@@ -11,3 +11,4 @@ target/
 *.zip
 *.tar.gz
 *.jar
+AGENTS.md

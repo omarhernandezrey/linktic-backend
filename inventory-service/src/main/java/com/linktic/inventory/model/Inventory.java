@@ -3,10 +3,11 @@ package com.linktic.inventory.model;
 import jakarta.persistence.*;
 
 @Entity
-@Table(uniqueConstraints = @UniqueConstraint(columnNames = "productId"))
+@Table(uniqueConstraints = @UniqueConstraint(columnNames = "product_id"))
 public class Inventory {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    @Column(name = "product_id")
     private Long productId;
     private Long quantity;
 

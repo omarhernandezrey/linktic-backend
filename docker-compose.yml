@@ -33,7 +33,7 @@ services:
       dockerfile: products-service/Dockerfile
     environment:
       SPRING_PROFILES_ACTIVE: docker
-      API_KEY_INTERNAL: "${INTERSERVICE_API_KEY}"
+      INTERSERVICE_API_KEY: "${INTERSERVICE_API_KEY}"
       SPRING_DATASOURCE_URL: "${PRODUCTS_DB_URL:-jdbc:postgresql://postgres-products:5432/${PRODUCTS_DB_NAME:-products}}"
       SPRING_DATASOURCE_USERNAME: "${PRODUCTS_DB_USER}"
       SPRING_DATASOURCE_PASSWORD: "${PRODUCTS_DB_PASS}"
@@ -50,7 +50,7 @@ services:
       dockerfile: inventory-service/Dockerfile
     environment:
       SPRING_PROFILES_ACTIVE: docker
-      API_KEY_INTERNAL: "${INTERSERVICE_API_KEY}"
+      INTERSERVICE_API_KEY: "${INTERSERVICE_API_KEY}"
       SPRING_DATASOURCE_URL: "${INVENTORY_DB_URL:-jdbc:postgresql://postgres-inventory:5432/${INVENTORY_DB_NAME:-inventory}}"
       SPRING_DATASOURCE_USERNAME: "${INVENTORY_DB_USER}"
       SPRING_DATASOURCE_PASSWORD: "${INVENTORY_DB_PASS}"
