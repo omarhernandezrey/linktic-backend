@@ -2,11 +2,12 @@ package com.linktic.products.web;
 
 import com.linktic.products.model.Product;
 import com.linktic.products.service.ProductService;
+import com.linktic.products.web.dto.JsonApiRequest;
+import com.linktic.products.web.dto.ProductAttributesDto;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
@@ -17,14 +18,10 @@ public class ProductController {
     public ProductController(ProductService service){ this.service = service; }
 
     @PostMapping(consumes = "application/vnd.api+json")
-    public ResponseEntity<?> create(@RequestBody Map<String,Object> body){
+    public ResponseEntity<?> create(@RequestBody @jakarta.validation.Valid JsonApiRequest<ProductAttributesDto> body){
         try{
-            Map<String,Object> data = (Map<String,Object>) body.get("data");
-            Map<String,Object> attrs = (Map<String,Object>) data.get("attributes");
-            String name = (String)attrs.get("name");
-            Object price = attrs.get("price");
-            String description = (String)attrs.getOrDefault("description", null);
-            Product p = service.create(name, new BigDecimal(String.valueOf(price)), description);
+            ProductAttributesDto attrs = body.getData().getAttributes();
+            Product p = service.create(attrs.getName(), attrs.getPrice(), attrs.getDescription());
             return ResponseEntity.status(201).contentType(MediaType.valueOf("application/vnd.api+json"))
                     .body(JsonApi.resource("products", String.valueOf(p.getId()), Map.of(
                             "name", p.getName(), "price", p.getPrice(), "description", p.getDescription()
