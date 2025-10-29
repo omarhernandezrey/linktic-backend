@@ -59,6 +59,16 @@ sequenceDiagram
   I-->>C: 201 {data: purchase}
 ```
 
+## Justificación: endpoint de compras en inventory-service
+
+El endpoint `POST /purchases` reside en `inventory-service` porque:
+
+- Fuente de verdad del stock: el inventario es el agregado dueño del dato a mutar.
+- Consistencia transaccional: descontar stock y persistir la compra ocurren en una única transacción del dominio de inventario.
+- Menor acoplamiento: `products-service` expone el precio/validación; evitar efectos colaterales de inventario dentro de Products.
+- Resiliencia y escalabilidad: los patrones de retry/circuit breaker hacia Products se gestionan desde Inventory sin bloquear la gobernanza del stock.
+- Claridad del modelo: las compras son salidas de inventario; su auditoría y compensaciones pertenecen a este contexto.
+
 ## API y JSON:API
 
 Media type: `application/vnd.api+json`.
@@ -107,6 +117,25 @@ Autenticación: enviar `X-API-KEY: <valor>` en cada request.
   - El header `Accept` debe incluir `application/vnd.api+json` (si no, 406 Not Acceptable).
   - `data.type` debe ser exactamente `"products"` (si no, 409 Conflict).
   - No se debe enviar `data.id` en creación (si está presente, 400 Bad Request).
+
+### Estricta conformidad JSON:API (Inventory)
+
+Inventory aplica reglas estrictas de negociación de contenido y formato:
+
+- `produces`: todos los endpoints responden `application/vnd.api+json`.
+- `consumes`: endpoints de escritura (`PATCH /inventory/{id}`, `POST /purchases`) exigen `Content-Type: application/vnd.api+json`.
+- `Content-Type` incorrecto: 415 Unsupported Media Type con envelope JSON:API.
+- `Accept` sin `application/vnd.api+json`: 406 Not Acceptable.
+- Todas las respuestas de error (4xx/5xx) devuelven `Content-Type: application/vnd.api+json`.
+
+Mapeos de errores y validaciones:
+
+- 404 Not Found: producto inexistente reportado por `products-service`.
+- 409 Conflict: stock insuficiente al intentar comprar.
+- 400 Bad Request: cantidades inválidas.
+- 401 Unauthorized: API key faltante/incorrecta.
+
+Existen pruebas unitarias y de integración que validan 415/406 y estos errores de negocio con envelopes JSON:API.
 
 ## Resiliencia y timeouts
 - WebClient con timeout `HTTP_CLIENT_TIMEOUT_MS` (ms).
