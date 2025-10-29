@@ -3,6 +3,7 @@ package com.linktic.products.web;
 import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -29,6 +30,13 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest()
                 .contentType(org.springframework.http.MediaType.valueOf("application/vnd.api+json"))
                 .body(JsonApi.error(400, "Bad Request", ex.getMessage()));
+    }
+
+    @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
+    public ResponseEntity<?> handleUnsupportedMedia(HttpMediaTypeNotSupportedException ex){
+        return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
+                .contentType(org.springframework.http.MediaType.valueOf("application/vnd.api+json"))
+                .body(JsonApi.error(415, "Unsupported Media Type", ex.getMessage()));
     }
 
     @ExceptionHandler(Exception.class)

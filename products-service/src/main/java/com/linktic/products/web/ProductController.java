@@ -20,14 +20,30 @@ public class ProductController {
     @PostMapping(consumes = "application/vnd.api+json")
     public ResponseEntity<?> create(@RequestBody @jakarta.validation.Valid JsonApiRequest<ProductAttributesDto> body){
         try{
-            ProductAttributesDto attrs = body.getData().getAttributes();
+            var vnd = MediaType.valueOf("application/vnd.api+json");
+            var data = body.getData();
+            // Validación estricta JSON:API
+            if (!"products".equals(data.getType())) {
+                return ResponseEntity.status(409)
+                        .contentType(vnd)
+                        .body(JsonApi.error(409, "Conflict", "El campo 'type' debe ser 'products'"));
+            }
+            if (data.getId() != null && !data.getId().isBlank()) {
+                return ResponseEntity.badRequest()
+                        .contentType(vnd)
+                        .body(JsonApi.error(400, "Bad Request", "No se debe enviar 'id' en creación"));
+            }
+
+            ProductAttributesDto attrs = data.getAttributes();
             Product p = service.create(attrs.getName(), attrs.getPrice(), attrs.getDescription());
-            return ResponseEntity.status(201).contentType(MediaType.valueOf("application/vnd.api+json"))
+            return ResponseEntity.status(201).contentType(vnd)
                     .body(JsonApi.resource("products", String.valueOf(p.getId()), Map.of(
                             "name", p.getName(), "price", p.getPrice(), "description", p.getDescription()
                     )));
         }catch(Exception ex){
-            return ResponseEntity.badRequest().body(JsonApi.error(400,"Bad Request", ex.getMessage()));
+            return ResponseEntity.badRequest()
+                    .contentType(MediaType.valueOf("application/vnd.api+json"))
+                    .body(JsonApi.error(400,"Bad Request", ex.getMessage()));
         }
     }
 
