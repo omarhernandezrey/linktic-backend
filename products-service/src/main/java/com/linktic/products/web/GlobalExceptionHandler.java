@@ -19,17 +19,23 @@ public class GlobalExceptionHandler {
                         "detail", fe.getDefaultMessage(),
                         "source", Map.of("pointer", toJsonApiPointer(fe.getField()))
                 )).toList();
-        return ResponseEntity.badRequest().body(Map.of("errors", errors));
+    return ResponseEntity.badRequest()
+        .contentType(org.springframework.http.MediaType.valueOf("application/vnd.api+json"))
+        .body(Map.of("errors", errors));
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<?> handleIllegalArg(IllegalArgumentException ex){
-        return ResponseEntity.badRequest().body(JsonApi.error(400, "Bad Request", ex.getMessage()));
+        return ResponseEntity.badRequest()
+                .contentType(org.springframework.http.MediaType.valueOf("application/vnd.api+json"))
+                .body(JsonApi.error(400, "Bad Request", ex.getMessage()));
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<?> handleGeneric(Exception ex){
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(JsonApi.error(500, "Internal Server Error", ex.getMessage()));
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .contentType(org.springframework.http.MediaType.valueOf("application/vnd.api+json"))
+                .body(JsonApi.error(500, "Internal Server Error", ex.getMessage()));
     }
 
     private String toJsonApiPointer(String field){
